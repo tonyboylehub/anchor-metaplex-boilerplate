@@ -1,7 +1,8 @@
 use anchor_lang::prelude::*;
 use mpl_token_metadata::{
     accounts::Metadata,
-    instructions::{TransferV1CpiBuilder, UpdateV1CpiBuilder, UpdateV1InstructionDataData},
+    instructions::{TransferV1CpiBuilder, UpdateV1CpiBuilder},
+    types::Data,
 };
 
 #[derive(Accounts)]
@@ -38,11 +39,11 @@ pub struct TransferNft<'info> {
     pub sysvar_instructions: AccountInfo<'info>,
 }
 
-pub fn handle_transfer_nft<'info>(ctx: Context<TransferNft>) -> Result<()> {
+pub fn handle_transfer_nft(ctx: Context<TransferNft>) -> Result<()> {
     // decode accounts
     let metadata_account = Metadata::try_from(&ctx.accounts.metadata)?;
 
-    let data: UpdateV1InstructionDataData = UpdateV1InstructionDataData {
+    let data = Data {
         name: "Metaplex".to_string(),
         symbol: "MPLX".to_string(),
         uri: "www.metaplex.com".to_string(),
@@ -53,19 +54,18 @@ pub fn handle_transfer_nft<'info>(ctx: Context<TransferNft>) -> Result<()> {
     UpdateV1CpiBuilder::new(&ctx.accounts.token_metadata_program)
         .authority(&ctx.accounts.update_authority)
         //.delegate_record(delegate_record)
-        .token(&ctx.accounts.token_account)
+        .token(Some(&ctx.accounts.token_account))
         .mint(&ctx.accounts.mint)
         .metadata(&ctx.accounts.metadata)
         //.edition(edition)
         .payer(&ctx.accounts.user)
         .system_program(&ctx.accounts.system_program)
         .sysvar_instructions(&ctx.accounts.sysvar_instructions)
-        .authorization_rules_program(&ctx.accounts.authorization_rules_program)
-        .authorization_rules(&ctx.accounts.authorization_rules)
+        .authorization_rules_program(Some(&ctx.accounts.authorization_rules_program))
+        .authorization_rules(Some(&ctx.accounts.authorization_rules))
         //.new_update_authority(new_update_authority)
         .data(data)
-        .build()
-        .invoke();
+        .invoke()?;
 
     TransferV1CpiBuilder::new(&ctx.accounts.token_metadata_program)
         .token(&ctx.accounts.token_account)
@@ -81,8 +81,7 @@ pub fn handle_transfer_nft<'info>(ctx: Context<TransferNft>) -> Result<()> {
         .spl_token_program(&ctx.accounts.spl_token_program)
         .spl_ata_program(&ctx.accounts.spl_ata_program)
         .amount(1)
-        .build()
-        .invoke();
+        .invoke()?;
 
     Ok(())
 }
