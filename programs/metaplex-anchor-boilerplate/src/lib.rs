@@ -10,8 +10,7 @@ pub mod metaplex_anchor_boilerplate {
     use super::*;
 
     pub fn transfer_nft(ctx: Context<TransferNft>) -> Result<()> {
-        handle_transfer_nft(ctx);
-        Ok(())
+        handle_transfer_nft(ctx)
     }
 }
 
